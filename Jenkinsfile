@@ -1,39 +1,32 @@
+@Library('Shared')_ 
 pipeline {
     agent { label 'dev-server' }
     stages {
         stage("Code Clone") {
             steps {
-                git url: 'https://github.com/pundir8372/Node-Todo-CICD.git', branch: 'master'
-                echo "Code clone ho gya."
+              
+                clone('https://github.com/pundir8372/Node-Todo-CICD.git', 'master')
             }
         }
         stage("Build") {
             steps {
-                sh 'docker build -t node-app .'
-                echo "build ho rha ha"
+                
+                dockerbuild('node-app', 'latest')
             }
         }
-        stage("Push Image to Dockerhub") {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: "dockerHubCreds",
-                        usernameVariable: "dockerHubUser",
-                        passwordVariable: "dockerHubPass"
-                    )
-                ]) {
-                    sh 'echo ${dockerHubPass} | docker login -u ${dockerHubUser} --password-stdin'
-                    sh 'docker image tag node-app:latest ${dockerHubUser}/node-app:latest'
-                    sh 'docker push ${dockerHubUser}/node-app:latest'
-                    echo "Image ho rhi ha dockerHub ma"
-                }
+        stage("Push to DockerHub"){
+            steps{
+                dockerpush("dockerHubCreds", "node-app" , "latest")
             }
         }
+        
         stage("Deploy") {
             steps {
-                sh 'docker compose down && docker compose up -d --build'
-                echo "Code deploy ho gya"
+               
+                echo 'Deploying the application...'
+                deploy()
             }
         }
+        
     }
 }
